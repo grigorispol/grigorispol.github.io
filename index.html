@@ -1,0 +1,1962 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+  // set the theme before first paint, so there's no flash of the wrong palette
+  (function(){
+    try{
+      var saved = localStorage.getItem('theme');
+      var theme = saved || 'light';
+      if (theme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+    }catch(e){}
+  })();
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grigoris Polychronakis</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cstyle%3E.line%7Bstroke:%2316202B%7D@media(prefers-color-scheme:dark)%7B.line%7Bstroke:%23F7F5F0%7D%7D%3C/style%3E%3Cpath class='line' d='M12 4 H38 L54 20 V58 A2 2 0 0 1 52 60 H12 A2 2 0 0 1 10 58 V6 A2 2 0 0 1 12 4 Z' fill='none' stroke-width='4' stroke-linejoin='round'/%3E%3Cpath class='line' d='M38 4 V16 A4 4 0 0 0 42 20 H54' fill='%23C1440E' stroke-width='4' stroke-linejoin='round'/%3E%3Cline class='line' x1='18' y1='32' x2='46' y2='32' stroke-width='3.4' stroke-linecap='round'/%3E%3Cline class='line' x1='18' y1='40' x2='46' y2='40' stroke-width='3.4' stroke-linecap='round'/%3E%3Cline class='line' x1='18' y1='48' x2='36' y2='48' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800&family=Playpen+Sans:wght@400;500;600;700;800&family=Oswald:wght@600;700&family=Anton&display=swap" rel="stylesheet">
+<style>
+
+  :root{
+    --canvas:#F7F5F0;
+    --highlight:#FBFAF6;
+    --card:#EDEAE2;
+    --border:#D8D2C4;
+    --border-dark:#B7B2A6;
+    --accent:#1D4E89;
+    --secondary:#8A7F6A;
+    --ink:#16202B;
+    --terracotta:#C1440E;
+    --terracotta-dark:#9E380B;
+
+    --font-display:'Lexend', sans-serif;
+    --font-body:'Lexend', sans-serif;
+    --font-mono:'Lexend', sans-serif;
+
+    --nav-h: 58px;
+
+    /* shared content bounds — eyebrow and sections both align to this */
+    --content-max: 1200px;
+    --content-pad: 80px;
+
+    --eyebrow-glass-1: rgba(255,255,255,0.6);
+    --eyebrow-glass-2: rgba(237,234,226,0.46);
+    --eyebrow-glass-border: rgba(255,255,255,0.5);
+    --eyebrow-glass-inset-top: rgba(255,255,255,0.65);
+    --eyebrow-glass-inset-bottom: rgba(216,210,196,0.4);
+    --eyebrow-shadow: rgba(22,32,43,0.1);
+    --eyebrow-underlight: rgba(22,32,43,0.55);
+    --section-rule: rgba(216,210,196,0.75);
+    --lava-blend: multiply;
+    --lava-opacity: 1;
+    --map-glow-blend: multiply;
+    --map-glow-rgb: 193,68,14;
+  }
+
+  html[data-theme="dark"]{
+    --canvas:#12161C;
+    --highlight:#1C2129;
+    --card:#1A1F27;
+    --border:#2A303B;
+    --border-dark:#3A4150;
+    --accent:#5A9BE0;
+    --secondary:#9BA3AF;
+    --ink:#EDEEF0;
+    --terracotta:#E8703A;
+    --terracotta-dark:#F08A57;
+
+    --eyebrow-glass-1: rgba(24,28,36,0.6);
+    --eyebrow-glass-2: rgba(18,22,28,0.5);
+    --eyebrow-glass-border: rgba(255,255,255,0.06);
+    --eyebrow-glass-inset-top: rgba(255,255,255,0.05);
+    --eyebrow-glass-inset-bottom: rgba(0,0,0,0.3);
+    --eyebrow-shadow: rgba(0,0,0,0.35);
+    --eyebrow-underlight: rgba(255,255,255,0.6);
+    --section-rule: rgba(42,48,59,0.9);
+    --lava-blend: screen;
+    --lava-opacity: 0;
+    --map-glow-blend: screen;
+    --map-glow-rgb: 232,112,58;
+  }
+
+  *{ margin:0; padding:0; box-sizing:border-box; }
+
+  html{ scroll-behavior:smooth; background:var(--canvas); }
+
+  html, html[data-theme]{
+    transition:background 0.35s ease;
+  }
+
+  body{
+    background:transparent;
+    color:var(--ink);
+    font-family:var(--font-body);
+    overflow-x:auto;
+    -webkit-font-smoothing:antialiased;
+    -webkit-user-select:none;
+    -moz-user-select:none;
+    -ms-user-select:none;
+    user-select:none;
+    transition:color 0.35s ease;
+  }
+
+  a{ color:inherit; text-decoration:none; }
+
+  /* ============ AMBIENT LAVA BACKGROUND ============ */
+  body::before{
+    content:'';
+    position:fixed;
+    inset:0;
+    z-index:-1;
+    pointer-events:none;
+    background-repeat:no-repeat;
+    background-image:
+      radial-gradient(circle, rgba(193,68,14,0.16) 0%, transparent 62%),
+      radial-gradient(circle, rgba(232,99,10,0.13) 0%, transparent 60%),
+      radial-gradient(circle, rgba(158,56,11,0.15) 0%, transparent 58%),
+      radial-gradient(circle, rgba(193,68,14,0.12) 0%, transparent 60%),
+      radial-gradient(circle, rgba(232,99,10,0.13) 0%, transparent 62%);
+    background-size:38% 32%, 34% 30%, 30% 26%, 36% 34%, 32% 28%;
+    background-position:
+      6% 8%,
+      92% 14%,
+      14% 88%,
+      88% 82%,
+      50% 46%;
+    filter:blur(90px);
+    mix-blend-mode:var(--lava-blend);
+    opacity:var(--lava-opacity);
+    animation:lavaDrift 48s ease-in-out infinite alternate;
+    transition:opacity 0.35s ease;
+  }
+
+  @keyframes lavaDrift{
+    0%{
+      background-position:
+        6% 8%, 92% 14%, 14% 88%, 88% 82%, 50% 46%;
+    }
+    33%{
+      background-position:
+        14% 22%, 80% 6%, 24% 74%, 76% 92%, 40% 60%;
+    }
+    66%{
+      background-position:
+        2% 30%, 86% 26%, 30% 92%, 94% 68%, 58% 34%;
+    }
+    100%{
+      background-position:
+        18% 10%, 74% 20%, 10% 80%, 82% 90%, 46% 52%;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    body::before{
+      animation:none;
+    }
+  }
+
+  /* smooth cross-fade of theme-linked colors across the page */
+  body, .eyebrow, section.block, .contact-card, .project-card, .dev-card,
+  .skill-card, .edu-entry, .contact-icon, .contact-icon svg{
+    transition:background 0.35s ease, color 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
+  }
+
+  ::selection{ background:var(--accent); color:var(--canvas); }
+
+  /* ============ THEME TOGGLE (sliding switch, sun / moon) ============ */
+  .theme-toggle{
+    position:relative;
+    display:flex;
+    align-items:center;
+    width:52px;
+    height:28px;
+    padding:3px;
+    border-radius:14px;
+    border:2px solid var(--border-dark);
+    background:transparent;
+    cursor:pointer;
+    flex-shrink:0;
+    transition:border-color 0.25s ease, background 0.25s ease;
+  }
+
+  .theme-toggle:hover{
+    border-color:var(--accent);
+  }
+
+  .theme-toggle:active .toggle-thumb{
+    transform:scale(0.92);
+  }
+
+  html[data-theme="dark"] .theme-toggle:active .toggle-thumb{
+    transform:translateX(24px) scale(0.92);
+  }
+
+  .toggle-thumb{
+    position:relative;
+    width:19px;
+    height:19px;
+    border-radius:50%;
+    background:transparent;
+    border:2px solid var(--border);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transform:translateX(0);
+    transition:transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), background 0.25s ease, border-color 0.25s ease;
+  }
+
+  html[data-theme="dark"] .toggle-thumb{
+    transform:translateX(24px);
+    border-color:var(--terracotta);
+  }
+
+  .theme-toggle svg{
+    position:absolute;
+    width:12px;
+    height:12px;
+    overflow:visible;
+    fill:none;
+    stroke:var(--ink);
+    stroke-width:1.8;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+    transition:opacity 0.25s ease, transform 0.3s ease, stroke 0.25s ease;
+  }
+
+  .theme-toggle .sun-rays line{
+    stroke-width:2.6;
+  }
+
+  .theme-toggle .star{
+    stroke:none;
+    fill:var(--ink);
+    transition:fill 0.25s ease;
+  }
+
+  /* light mode: sun shown, moon hidden */
+  .theme-toggle .icon-sun{
+    opacity:1;
+    transform:rotate(0deg) scale(1);
+  }
+
+  .theme-toggle .icon-moon{
+    opacity:0;
+    transform:rotate(-90deg) scale(0.5);
+  }
+
+  /* dark mode: moon shown, sun hidden */
+  html[data-theme="dark"] .theme-toggle .icon-sun{
+    opacity:0;
+    transform:rotate(90deg) scale(0.5);
+  }
+
+  html[data-theme="dark"] .theme-toggle .icon-moon{
+    opacity:1;
+    transform:rotate(0deg) scale(1);
+    stroke:var(--terracotta);
+    fill:var(--terracotta);
+  }
+
+  html[data-theme="dark"] .theme-toggle .star{
+    fill:var(--terracotta);
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .theme-toggle,
+    .theme-toggle *,
+    .toggle-thumb{
+      transition:none !important;
+    }
+  }
+
+  /* focus visibility */
+  a:focus-visible, button:focus-visible{
+    outline:2px solid var(--accent);
+    outline-offset:3px;
+    border-radius:4px;
+  }
+
+  /* ============ SCROLL PROGRESS BAR ============ */
+  .scroll-progress{
+    position:fixed;
+    top:0; left:0;
+    height:3px;
+    width:100%;
+    background:var(--accent);
+    z-index:200;
+    transform:scaleX(0);
+    transform-origin:left center;
+    transition:transform 0.18s ease-out;
+    will-change:transform;
+  }
+
+  /* ============ EYEBROW / NAV ============ */
+  .eyebrow{
+    position:fixed;
+    top:0; left:0; right:0;
+    z-index:100;
+    height:var(--nav-h);
+    background:linear-gradient(180deg, var(--eyebrow-glass-1) 0%, var(--eyebrow-glass-2) 100%);
+    backdrop-filter:blur(10px) saturate(140%);
+    -webkit-backdrop-filter:blur(10px) saturate(140%);
+    border-bottom:1px solid var(--eyebrow-glass-border);
+    box-shadow:
+      inset 0 1px 0 var(--eyebrow-glass-inset-top),
+      inset 0 -1px 0 var(--eyebrow-glass-inset-bottom),
+      0 12px 34px var(--eyebrow-shadow);
+    isolation:isolate;
+    transition:background 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
+  }
+
+  /* underlight beneath the eyebrow, in the darkest ink from the palette */
+  .eyebrow::after{
+    content:'';
+    position:absolute;
+    left:0; right:0; bottom:-1px;
+    height:1px;
+    background:linear-gradient(90deg, transparent 0%, var(--eyebrow-underlight) 50%, transparent 100%);
+    pointer-events:none;
+  }
+
+  .eyebrow-inner{
+    position:relative;
+    z-index:1;
+    height:100%;
+    width:var(--content-max);
+    margin:0 auto;
+    padding:0 var(--content-pad);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+
+  .brand{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:19px;
+    letter-spacing:0.01em;
+    white-space:nowrap;
+  }
+  .brand .g{
+    color:var(--terracotta);
+  }
+
+  .nav-links{
+    display:flex;
+    align-items:center;
+    gap:30px;
+  }
+
+  .nav-links a.cv-btn,
+  .nav-links button:not(.theme-toggle){
+    position:relative;
+    font-family:var(--font-mono);
+    font-size:12.5px;
+    font-weight:500;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    background:none;
+    border:none;
+    color:var(--ink);
+    padding:6px 0;
+    cursor:pointer;
+    transition:color 0.25s ease;
+  }
+
+  .nav-links a.cv-btn::after,
+  .nav-links button:not(.theme-toggle)::after{
+    content:'';
+    position:absolute;
+    left:0; right:0; bottom:0;
+    height:1.5px;
+    background:currentColor;
+    transform:scaleX(0);
+    transform-origin:right center;
+    transition:transform 0.28s ease;
+  }
+
+  .nav-links a.cv-btn:hover::after,
+  .nav-links button:not(.theme-toggle):hover::after{
+    transform:scaleX(1);
+    transform-origin:left center;
+  }
+
+  .nav-links button.contact-btn{
+    color:var(--terracotta);
+  }
+  .nav-links button.contact-btn:hover{
+    color:var(--terracotta-dark);
+  }
+
+  .nav-toggle{
+    display:none;
+    background:transparent;
+    border:2px solid var(--border);
+    border-radius:10px;
+    width:42px; height:42px;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+  }
+  .nav-toggle span{
+    display:block;
+    width:18px; height:1.5px;
+    background:var(--ink);
+    position:relative;
+  }
+  .nav-toggle span::before,
+  .nav-toggle span::after{
+    content:'';
+    position:absolute;
+    left:0; width:18px; height:1.5px;
+    background:var(--ink);
+    transition:transform 0.2s ease;
+  }
+  .nav-toggle span::before{ top:-6px; }
+  .nav-toggle span::after{ top:6px; }
+
+  /* ============ HERO ============ */
+  .hero{
+    position:relative;
+    min-height:42vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:calc(var(--nav-h) + 32px) 24px 80px;
+    overflow:hidden;
+  }
+
+  
+
+  .hero-content{
+    position:relative;
+    z-index:2;
+    text-align:center;
+    width:var(--content-max);
+    padding:0 var(--content-pad);
+  }
+
+  .hero-hook{
+    font-family:var(--font-body);
+    font-weight:300;
+    font-size:26px;
+    letter-spacing:0.01em;
+    color:var(--secondary);
+    margin-bottom:20px;
+  }
+
+  .hero-title{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:92px;
+    line-height:1.02;
+    letter-spacing:-0.01em;
+    color:var(--ink);
+    white-space:nowrap;
+  }
+
+  .scroll-cue{
+    position:absolute;
+    bottom:20px;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:2;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    opacity:0.22;
+  }
+
+  /* chevron-only scroll cue */
+  .scroll-indicator{
+    width:26px;
+    height:auto;
+    overflow:visible;
+  }
+
+  .scroll-indicator .chevron{
+    stroke:var(--secondary);
+    stroke-width:2;
+    fill:none;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+    animation:chevron-pulse 2.4s ease-in-out infinite;
+  }
+
+  @keyframes chevron-pulse{
+    0%, 100%{ opacity:0.5; transform:translateY(0); }
+    50%{ opacity:1; transform:translateY(4px); }
+  }
+
+  /* ============ SECTIONS (placeholder state) ============ */
+  section.block{
+    position:relative;
+    padding:48px var(--content-pad);
+    width:var(--content-max);
+    margin:0 auto;
+    border-top:1px solid var(--section-rule);
+    opacity:0.6;
+    transform:translateY(10px);
+    transition:opacity 0.5s ease, transform 0.5s ease;
+  }
+
+  section.block.in-view{
+    opacity:1;
+    transform:translateY(0);
+  }
+
+  /* keep top/bottom empty space identical across every section, regardless
+     of what margin the first/last inner element would normally carry */
+  section.block > *:first-child{
+    margin-top:0;
+  }
+  section.block > *:last-child{
+    margin-bottom:0;
+  }
+
+  .block-title{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:44px;
+    letter-spacing:-0.01em;
+    color:var(--ink);
+    margin-bottom:28px;
+  }
+
+
+  .block-sub{
+    font-family:var(--font-body);
+    font-weight:300;
+    font-size:19px;
+    color:var(--secondary);
+    margin-bottom:36px;
+    letter-spacing:0.01em;
+  }
+
+  .block-body{
+    font-family:var(--font-body);
+    font-weight:400;
+    font-size:18px;
+    color:var(--ink);
+    line-height:1.5;
+    margin-bottom:8px;
+    text-align:justify;
+    text-align-last:justify;
+  }
+
+  .block-body.no-justify-last{
+    text-align-last:left;
+  }
+
+  .edu-entry{
+    margin-bottom:24px;
+    padding-bottom:24px;
+    border-bottom:2px solid var(--border);
+  }
+
+  .edu-entry:last-of-type{
+    margin-bottom:0;
+    padding-bottom:0;
+    border-bottom:none;
+  }
+
+  .edu-degree{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:20px;
+    color:var(--ink);
+    margin-bottom:8px;
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:24px;
+  }
+
+  .edu-uni{
+    font-family:var(--font-body);
+    font-weight:400;
+    font-size:15px;
+    color:var(--ink);
+    white-space:nowrap;
+    flex-shrink:0;
+  }
+
+  .edu-abbr{
+    display:inline-block;
+    width:2em;
+  }
+
+  /* ============ CONTACT ============ */
+  .contact-grid{
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:16px;
+  }
+
+  .contact-card{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    padding:16px 20px;
+    border:2px solid var(--border);
+    border-radius:16px;
+    background:var(--card);
+    transition:background 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
+  }
+
+  .contact-card:hover{
+    background:var(--highlight);
+    border-color:var(--accent);
+    transform:translateY(-2px);
+  }
+
+  .contact-icon{
+    flex-shrink:0;
+    box-sizing:border-box;
+    width:42px;
+    height:42px;
+    border-radius:12px;
+    background:var(--ink);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transform:translateZ(0);
+  }
+
+  .contact-icon svg{
+    width:20px;
+    height:20px;
+    stroke:var(--canvas);
+    fill:none;
+    stroke-width:1.8;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+    shape-rendering:geometricPrecision;
+  }
+
+  .contact-icon-prism{
+    background:var(--ink);
+  }
+
+  .contact-icon-prism svg{
+    stroke:none;
+    width:20px;
+    height:20px;
+  }
+
+  .contact-icon-github svg{
+    stroke:none;
+    fill:var(--canvas);
+    width:20px;
+    height:20px;
+  }
+
+  .contact-icon-mail svg{
+    stroke:none;
+    fill:var(--canvas);
+    width:20px;
+    height:20px;
+  }
+
+  .contact-icon-linkedin svg{
+    stroke:none;
+    fill:var(--canvas);
+    width:20px;
+    height:20px;
+  }
+
+  .contact-text{
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+  }
+
+  .contact-label{
+    font-family:var(--font-mono);
+    font-size:11px;
+    font-weight:500;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:var(--secondary);
+  }
+
+  .contact-value{
+    font-family:var(--font-body);
+    font-size:16px;
+    font-weight:500;
+    color:var(--ink);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+
+  /* ============ PROJECTS ============ */
+  .project-card-frame{
+    border-radius:19px;
+    padding:2px;
+    background:linear-gradient(120deg, #CC2929, #E8630A, #F0C522, #7DC442, #2D6CDF, #6B3FA0);
+    transition:transform 0.25s ease;
+    will-change:transform;
+  }
+
+  .project-card-frame:hover{
+    transform:translateY(-2px) translateZ(0);
+  }
+
+  .project-card{
+    display:flex;
+    padding:16px 28px;
+    border-radius:17px;
+    background:var(--card);
+    transition:background 0.25s ease;
+  }
+
+  .project-card-frame:hover .project-card{
+    background:var(--highlight);
+  }
+
+  /* prism mark — dark base + outline always visible, gradient facet
+     fades in only while hovering the project card */
+  .project-logo{
+    --p-red:#CC2929;
+    --p-orange:#E8630A;
+    --p-yellow:#F0C522;
+    --p-green:#7DC442;
+    --p-blue:#2D6CDF;
+    --p-purple:#6B3FA0;
+    flex-shrink:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:42px;
+    height:42px;
+    transform:translateZ(0);
+  }
+
+  .project-logo svg{
+    width:100%;
+    height:100%;
+    overflow:visible;
+    shape-rendering:geometricPrecision;
+  }
+
+  .project-logo .prism-outline{
+    transform:translateZ(0);
+  }
+
+  .project-logo .prism-color{
+    opacity:0;
+    transition:opacity 0.4s ease;
+    will-change:opacity;
+  }
+
+  .project-card-frame:hover .project-logo .prism-color{
+    opacity:1;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .project-logo .prism-color{
+      transition:none;
+    }
+  }
+
+  .project-body{
+    min-width:0;
+    flex:1;
+  }
+
+  .project-title-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-bottom:8px;
+  }
+
+  .project-title{
+    font-family:'Playpen Sans', var(--font-display);
+    font-weight:700;
+    font-size:27px;
+    color:var(--ink);
+  }
+
+
+  .project-desc{
+    font-family:var(--font-body);
+    font-size:16px;
+    color:var(--secondary);
+    line-height:1.5;
+    margin-bottom:12px;
+    text-align:justify;
+    text-align-last:justify;
+  }
+
+  /* ============ EXPERIENCE LAYOUT ============ */
+  .experience-layout{
+    display:flex;
+    flex-direction:column;
+    gap:32px;
+  }
+
+  .experience-row{
+    display:flex;
+    align-items:stretch;
+    gap:16px;
+  }
+
+  .experience-map{
+    flex:0 0 auto;
+    width:34%;
+    max-width:280px;
+    margin-top:81px;
+    position:relative;
+    order:2;
+  }
+
+  .year-marker{
+    position:absolute;
+    left:0;
+    right:0;
+    text-align:center;
+    font-family:'Anton', 'Oswald', var(--font-display);
+    font-weight:700;
+    font-size:86px;
+    color:var(--border-dark);
+    letter-spacing:0.03em;
+    text-transform:uppercase;
+    line-height:1;
+    opacity:0.16;
+    pointer-events:none;
+  }
+
+  .year-marker .year-flip{
+    display:inline-block;
+    color:var(--secondary);
+    transition:opacity .25s ease, transform .25s ease;
+  }
+
+  .year-marker .year-flip.flipping{
+    opacity:0;
+    transform:translateY(-6px);
+  }
+
+  .experience-map .map-frame{
+    position:relative;
+    width:100%;
+    height:100%;
+    line-height:0;
+    margin-top:0;
+  }
+
+  .experience-map img{
+    display:block;
+    width:100%;
+    height:100%;
+    object-fit:contain;
+    object-position:top;
+    -webkit-user-drag:none;
+    user-drag:none;
+    pointer-events:none;
+  }
+
+  /* fixed glow points — JS toggles .lit on a pair at a time, calmly */
+  .map-spotlight{
+    position:absolute;
+    top:0; left:0;
+    width:100%; height:100%;
+    pointer-events:none;
+  }
+
+  /* idle pin: a faint dot always visible, so the map reads as a set of real places */
+  .map-spotlight .glow{
+    position:absolute;
+    width:8%;
+    aspect-ratio:1/1;
+    border-radius:50%;
+    transform:translate(-50%, -50%) scale(0.55);
+    background:radial-gradient(circle, rgba(var(--map-glow-rgb),0.65) 0%, rgba(var(--map-glow-rgb),0.3) 45%, rgba(var(--map-glow-rgb),0) 75%);
+    mix-blend-mode:var(--map-glow-blend);
+    opacity:0.14;
+    filter:blur(1.5px);
+    transition:opacity 2.8s ease-in-out, transform 2.8s cubic-bezier(0.22, 1, 0.36, 1), background 0.35s ease;
+  }
+
+  /* solid pin core, fades in with the halo for a crisper focal point */
+  .map-spotlight .glow::before{
+    content:'';
+    position:absolute;
+    top:50%; left:50%;
+    width:20%; height:20%;
+    transform:translate(-50%, -50%);
+    border-radius:50%;
+    background:var(--terracotta);
+    opacity:0;
+    transition:opacity 2.8s ease-in-out;
+  }
+
+  /* one-shot ping ring, plays only on the transition into .lit */
+  .map-spotlight .glow::after{
+    content:'';
+    position:absolute;
+    inset:-25%;
+    border-radius:50%;
+    border:1.5px solid var(--terracotta);
+    opacity:0;
+    transform:scale(0.4);
+  }
+
+  .map-spotlight .glow.lit{
+    opacity:1;
+    transform:translate(-50%, -50%) scale(1);
+  }
+
+  .map-spotlight .glow.lit::before{
+    opacity:0.9;
+  }
+
+  .map-spotlight .glow.lit::after{
+    animation:mapPing 2.4s ease-out 1;
+  }
+
+  @keyframes mapPing{
+    0%{ transform:scale(0.4); opacity:0.55; }
+    100%{ transform:scale(1.7); opacity:0; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .map-spotlight .glow{
+      transition:none;
+      opacity:0.4;
+      transform:translate(-50%, -50%) scale(1);
+    }
+    .map-spotlight .glow::after{
+      animation:none;
+    }
+  }
+
+  .experience-content{
+    flex:1 1 auto;
+    min-width:0;
+    order:1;
+  }
+
+  .role-degree{
+    font-size:28px;
+  }
+
+  .block-body-sub{ color:var(--secondary); }
+
+  /* ============ DEVELOPMENT / SKILLS CARDS (shared layout) ============ */
+  .dev-cards, .skill-cards{
+    display:flex;
+    flex-direction:column;
+    gap:20px;
+  }
+
+  .dev-card-frame, .skill-card-frame{
+    border-radius:19px;
+    padding:2px;
+    background:var(--border);
+    transition:transform 0.25s ease;
+    will-change:transform;
+  }
+
+  .dev-card-frame:hover, .skill-card-frame:hover{
+    transform:translateY(-2px) translateZ(0);
+    background:var(--accent);
+  }
+
+  .dev-card, .skill-card{
+    display:flex;
+    flex-direction:column;
+    height:100%;
+    padding:20px 24px;
+    border-radius:17px;
+    background:var(--card);
+    transition:background 0.25s ease;
+  }
+
+  .dev-card-frame:hover .dev-card,
+  .skill-card-frame:hover .skill-card{
+    background:var(--highlight);
+  }
+
+  .dev-card-title, .skill-card-title{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:20px;
+    color:var(--ink);
+    margin-bottom:12px;
+  }
+
+  .dev-org, .skill-org{
+    margin-top:14px;
+  }
+
+  .dev-org:first-of-type, .skill-org:first-of-type{
+    margin-top:0;
+  }
+
+  .dev-org-name, .skill-org-name{
+    display:block;
+    font-family:var(--font-body);
+    font-weight:600;
+    font-size:15px;
+    color:var(--accent);
+    margin-bottom:4px;
+  }
+
+  footer{
+    padding:40px var(--content-pad) 56px;
+    text-align:center;
+    font-family:var(--font-mono);
+    font-size:12px;
+    color:var(--secondary);
+    letter-spacing:0.04em;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; }
+    section.block{
+      opacity:1 !important;
+      transform:none !important;
+    }
+  }
+
+  /* ============ MOBILE ============ */
+  @media (max-width: 720px){
+
+    /* shrink the shared content bounds so every width:var(--content-max)
+       container (eyebrow, hero, sections, footer) fills the viewport
+       instead of staying pinned at the desktop 1200px */
+    :root{
+      --content-max: 100%;
+      --content-pad: 20px;
+    }
+
+    body{ overflow-x:hidden; }
+
+    /* nav: collapse into a hamburger-triggered dropdown (JS already
+       toggles .open on #navLinks — this just gives it somewhere to go) */
+    .nav-toggle{ display:flex; }
+
+    .nav-links{
+      position:fixed;
+      top:var(--nav-h);
+      left:0; right:0;
+      flex-direction:column;
+      align-items:stretch;
+      gap:0;
+      background:var(--canvas);
+      border-bottom:1px solid var(--border);
+      box-shadow:0 16px 28px rgba(22,32,43,0.12);
+      padding:4px 20px 18px;
+      max-height:0;
+      overflow:hidden;
+      opacity:0;
+      pointer-events:none;
+      transition:max-height 0.3s ease, opacity 0.25s ease;
+    }
+
+    .nav-links.open{
+      max-height:280px;
+      opacity:1;
+      pointer-events:auto;
+    }
+
+    .nav-links a.cv-btn,
+    .nav-links button.contact-btn{
+      width:100%;
+      text-align:left;
+      padding:14px 0;
+      border-bottom:1px solid var(--border);
+    }
+
+    .nav-links .theme-toggle{
+      margin:14px 0 4px;
+    }
+
+    /* hero: let the name wrap and scale instead of overflowing */
+    .hero{
+      padding:calc(var(--nav-h) + 24px) 20px 56px;
+      min-height:38vh;
+    }
+
+    .hero-hook{
+      font-size:16px;
+      margin-bottom:14px;
+    }
+
+    .hero-title{
+      font-size:clamp(34px, 11vw, 56px);
+      white-space:normal;
+      line-height:1.1;
+    }
+
+    /* sections: tighter rhythm, smaller heading scale */
+    section.block{
+      padding:36px var(--content-pad);
+    }
+
+    .block-title{
+      font-size:32px;
+      margin-bottom:18px;
+    }
+
+    .block-sub{
+      font-size:16px;
+      margin-bottom:24px;
+    }
+
+    .block-body{
+      font-size:16px;
+    }
+
+    /* justified text gets ragged word-spacing on narrow columns —
+       left-align instead on small screens */
+    .block-body, .project-desc{
+      text-align:left;
+      text-align-last:left;
+    }
+
+    /* degree/role rows: stack instead of squeezing a nowrap
+       institution name against the title */
+    .edu-degree{
+      flex-direction:column;
+      align-items:flex-start;
+      gap:4px;
+    }
+
+    .edu-uni{
+      white-space:normal;
+    }
+
+    .role-degree{
+      font-size:22px;
+    }
+
+    /* experience: map stacks above the text instead of squeezing
+       into a 34%-width column beside it */
+    .experience-row{
+      flex-direction:column;
+    }
+
+    .experience-map{
+      width:100%;
+      max-width:220px;
+      margin:0 auto 24px;
+      order:0;
+    }
+
+    .experience-content{
+      order:1;
+    }
+
+    .year-marker{
+      font-size:44px;
+    }
+
+    /* contact grid: 4 columns is too tight on a phone */
+    .contact-grid{
+      grid-template-columns:repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 480px){
+    .contact-grid{
+      grid-template-columns:1fr;
+    }
+
+    .dev-card, .skill-card{
+      padding:16px 18px;
+    }
+
+    .project-card{
+      padding:14px 18px;
+    }
+
+    .hero-title{
+      font-size:clamp(30px, 12vw, 44px);
+    }
+  }
+
+  /* ============ PRINT ============ */
+  @media print{
+    /* kill the ambient background art, glow, gradients — plain white page, plain dark text */
+    body::before, body::after,
+    .scroll-progress, .scroll-cue,
+    .nav-toggle{
+      display:none !important;
+    }
+    html, body{
+      background:#fff !important;
+    }
+    body{
+      color:#16202B !important;
+    }
+
+    /* eyebrow: no longer fixed/blurred, just a simple header at the top of the printed page */
+    .eyebrow{
+      position:static !important;
+      background:#fff !important;
+      backdrop-filter:none !important;
+      -webkit-backdrop-filter:none !important;
+      box-shadow:none !important;
+      border-bottom:1px solid #D8D2C4 !important;
+    }
+    .eyebrow::after{ display:none !important; }
+    .nav-links a.cv-btn{ display:none !important; } /* pointless to "download the CV" from inside a printout of the CV */
+
+    /* every section forced fully visible regardless of scroll state */
+    section.block{
+      opacity:1 !important;
+      transform:none !important;
+      break-inside:avoid;
+      page-break-inside:avoid;
+    }
+
+    /* strip glass/blur/shadow effects that only make sense on screen */
+    * {
+      box-shadow:none !important;
+      text-shadow:none !important;
+      backdrop-filter:none !important;
+      -webkit-backdrop-filter:none !important;
+    }
+
+    a{ color:#16202B !important; text-decoration:underline; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- SCROLL PROGRESS -->
+  <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
+
+  <!-- EYEBROW -->
+  <header class="eyebrow">
+    <div class="eyebrow-inner">
+      <a href="#hero" class="brand"><span class="g">G</span>POLYCHRONAKIS</a>
+
+      <nav class="nav-links" id="navLinks">
+        <a class="cv-btn" href="assets/gpolychronakiscv.pdf" download>Download CV</a>
+        <button class="contact-btn" onclick="scrollToSection('contact')">Contact</button>
+        <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode" aria-pressed="false" title="Toggle dark mode">
+          <span class="toggle-thumb">
+            <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="4.3"/>
+              <g class="sun-rays">
+                <line x1="12" y1="2" x2="12" y2="3.6"/>
+                <line x1="12" y1="20.4" x2="12" y2="22"/>
+                <line x1="2" y1="12" x2="3.6" y2="12"/>
+                <line x1="20.4" y1="12" x2="22" y2="12"/>
+                <line x1="4.9" y1="4.9" x2="6" y2="6"/>
+                <line x1="18" y1="18" x2="19.1" y2="19.1"/>
+                <line x1="18" y1="6" x2="19.1" y2="4.9"/>
+                <line x1="4.9" y1="19.1" x2="6" y2="18"/>
+              </g>
+            </svg>
+            <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M20.5 14.5 A9 9 0 1 1 9.5 3.5 A7.2 7.2 0 0 0 20.5 14.5 Z"/>
+              <path class="star" d="M18.3 3 L18.9 4.6 L20.5 5.2 L18.9 5.8 L18.3 7.4 L17.7 5.8 L16.1 5.2 L17.7 4.6 Z"/>
+              <path class="star star-sm" d="M21.3 8.4 L21.6 9.2 L22.4 9.5 L21.6 9.8 L21.3 10.6 L21 9.8 L20.2 9.5 L21 9.2 Z"/>
+            </svg>
+          </span>
+        </button>
+      </nav>
+
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle menu"><span></span></button>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section class="hero" id="hero">
+
+    <div class="hero-content">
+      <p class="hero-hook">Basically my LinkedIn profile, but far more interesting</p>
+      <h1 class="hero-title">Grigoris Polychronakis</h1>
+    </div>
+
+    <div class="scroll-cue">
+      <svg class="scroll-indicator" viewBox="0 0 24 14" aria-hidden="true">
+        <path class="chevron" d="M2 2 L12 12 L22 2"/>
+      </svg>
+    </div>
+  </section>
+
+  <!-- INFORMATION -->
+  <section class="block" id="information">
+    <h2 class="block-title">Information</h2>
+    <p class="block-sub">The essentials. No buzzwords, no "passionate team player", no fluff</p>
+    <div>
+      <p class="block-body no-justify-last">Being around since 1999, based in Athens, Greece</p>
+      <p class="block-body">I studied Physical Sciences, completing an interdisciplinary program spanning physics, chemistry and biology from the ground up. My academic training covered theoretical foundations, hands-on laboratory work and scientific data processing. Professionally, the greater part of my career has been spent in education — taking on roles in program delivery, youth leadership and science teaching and working closely with students, educators and organizations</p>
+      <p class="block-body">Moving forward, I am pursuing postgraduate studies while looking to shift my career toward positions of scientific interest, data analysis and software development, building on my technical skills and seeking professional experience</p>
+    </div>
+  </section>
+
+  <!-- EDUCATION -->
+  <section class="block" id="education">
+    <h2 class="block-title">Education</h2>
+    <p class="block-sub">The full academic picture — institutions, degrees and coursework</p>
+    <div class="edu-entry">
+      <p class="edu-degree">
+        <span><span class="edu-abbr">MSc</span> | Quantum Computing and Quantum Technologies</span>
+        <span class="edu-uni">Democritus University of Thrace, Greece</span>
+      </p>
+      <p class="block-body block-body-sub">Accepted for the program, with studies beginning in October 2026. Delivered entirely through live distance learning and offering a flexible structure, it provides students with cutting-edge knowledge in quantum mechanics, quantum computing and quantum technologies — with applications in scientific research and technology-driven enterprises</p>
+    </div>
+    <div class="edu-entry">
+      <p class="edu-degree">
+        <span><span class="edu-abbr">BSc</span> | Studies in Physical Sciences</span>
+        <span class="edu-uni">Hellenic Open University, Patras, Greece</span>
+      </p>
+      <p class="block-body block-body-sub">Completed, in full. This was an interdisciplinary program running the full spectrum of physics alongside some serious coursework in chemistry and biology. Math set the foundations — single and multivariable calculus, linear algebra, differential equations. Physics formed the core, moving from classical mechanics into modern and high energy physics. Chemistry and biology added their own range, from inorgo and orgo to physical chemistry, biochem, molecular biology and genetics. All tied together by over 50 lab sessions, plus some programming for modeling and data analysis</p>
+    </div>
+  </section>
+
+  <!-- EXPERIENCE -->
+  <section class="block" id="experience">
+    <h2 class="block-title">Experience</h2>
+    <p class="block-sub">A straightforward record of the positions I've held — all of them</p>
+    <div class="experience-layout">
+     <div class="experience-row">
+      <div class="experience-map">
+        <div class="map-frame">
+          <img id="greeceMapImg" data-src-light="assets/greece-map-recolored.png" data-src-dark="assets/greece-map-recolored-dark.png" alt="Hand-drawn line map of Greece" draggable="false" ondragstart="return false;" loading="lazy">
+          <script>
+            (function(){
+              var el = document.getElementById('greeceMapImg');
+              var dark = document.documentElement.getAttribute('data-theme') === 'dark';
+              el.src = dark ? el.getAttribute('data-src-dark') : el.getAttribute('data-src-light');
+            })();
+          </script>
+          <div class="map-spotlight" id="mapSpotlight" aria-hidden="true">
+            <div class="glow" style="left:52.44%; top:15.54%;"></div>
+            <div class="glow" style="left:37.69%; top:22.28%;"></div>
+            <div class="glow" style="left:32.0%; top:25.83%;"></div>
+            <div class="glow" style="left:4.94%; top:32.64%;"></div>
+            <div class="glow" style="left:33.44%; top:34.34%;"></div>
+            <div class="glow" style="left:27.44%; top:38.42%;"></div>
+            <div class="glow" style="left:32.25%; top:43.38%;"></div>
+            <div class="glow" style="left:31.87%; top:49.74%;"></div>
+            <div class="glow" style="left:46.12%; top:49.81%;"></div>
+            <div class="glow" style="left:37.94%; top:50.52%;"></div>
+            <div class="glow" style="left:50.5%; top:53.29%;"></div>
+            <div class="glow" style="left:26.38%; top:54.55%;"></div>
+            <div class="glow" style="left:45.62%; top:55.07%;"></div>
+            <div class="glow" style="left:42.69%; top:56.33%;"></div>
+            <div class="glow" style="left:36.5%; top:57.29%;"></div>
+            <div class="glow" style="left:57.94%; top:58.7%;"></div>
+            <div class="glow" style="left:43.59%; top:58.92%;"></div>
+            <div class="glow" style="left:17.0%; top:60.33%;"></div>
+            <div class="glow" style="left:61.56%; top:61.51%;"></div>
+            <div class="glow" style="left:36.5%; top:61.95%;"></div>
+            <div class="glow" style="left:24.69%; top:62.92%;"></div>
+            <div class="glow" style="left:64.12%; top:63.95%;"></div>
+            <div class="glow" style="left:33.88%; top:65.58%;"></div>
+            <div class="glow" style="left:40.0%; top:66.1%;"></div>
+            <div class="glow" style="left:43.94%; top:66.47%;"></div>
+            <div class="glow" style="left:65.25%; top:67.8%;"></div>
+            <div class="glow" style="left:25.87%; top:68.32%;"></div>
+            <div class="glow" style="left:40.81%; top:68.54%;"></div>
+            <div class="glow" style="left:30.63%; top:70.1%;"></div>
+            <div class="glow" style="left:25.56%; top:71.28%;"></div>
+            <div class="glow" style="left:96.31%; top:76.54%;"></div>
+            <div class="glow" style="left:66.12%; top:77.94%;"></div>
+            <div class="glow" style="left:50.62%; top:90.01%;"></div>
+            <div class="glow" style="left:62.06%; top:91.49%;"></div>
+            <div class="glow" style="left:69.19%; top:92.89%;"></div>
+          </div>
+        </div>
+        <div class="year-marker" id="yearMarker" aria-hidden="true"><span class="year-fixed">202</span><span class="year-flip" id="yearFlip">2</span></div>
+        <div class="year-marker" id="yearMarkerTeamLeader" aria-hidden="true">2024</div>
+        <div class="year-marker" id="yearMarkerPhysicsTutor" aria-hidden="true"><span class="year-fixed">202</span><span class="year-flip" id="yearFlipPhysicsTutor">0</span></div>
+      </div>
+      <div class="experience-content">
+        <div class="edu-entry">
+          <p class="edu-degree role-degree">
+            <span>Program Coordinator</span>
+            <span class="edu-uni">Ekpaideutikos Organismos Fotogramma</span>
+          </p>
+          <p class="block-body block-body-sub">Over the course of several years in this role, I got to deliver and coordinate educational programs of interactive cinema across the country. These programs reached students aged 4 to 17 and covered a wide range of educational and social topics — from talking Greek poets with 5-year-olds who knew nothing about poetry but loved every minute of it, to genuinely tough conversations with teenagers about racism and bullying within the school environment. My role went beyond just running the screenings — I was there to interact with the students and make sure each program's goals actually landed. For the younger kids, that meant learning through play, noise and fun. For the older ones, it meant building a safe space to talk about <span id="hardStuffLine">the hard stuff</span>. At times I also wore other hats within the programs — technician, usher, public relations, whatever the day required. In the process, I had the chance to connect with students and educators from across Greece, from urban centers to remote areas, and got to explore more of the country than I ever expected to</p>
+        </div>
+        <div class="edu-entry">
+          <p class="edu-degree role-degree">
+            <span>Team Leader</span>
+            <span class="edu-uni">Kivotos Paidikes Ypotheseis</span>
+          </p>
+          <p class="block-body block-body-sub">I spent that summer in Athens taking on this role during a two-month camp session, leading a group of kids day in and day out — ensuring their safety, guiding them through daily activities and making sure the group felt like a team rather than just a schedule to get through. Beyond that group, I was in charge of educational activities — running sessions that followed the camp's curriculum alongside ones I designed myself. Part of my work included science workshops put together with the kids, and experiments that, despite their simplicity, reflected complex scientific fields</p>
+        </div>
+        <div class="edu-entry">
+          <p class="edu-degree role-degree">
+            <span>Physics Tutor</span>
+          </p>
+          <p class="block-body block-body-sub">Years of one-on-one tutoring, mostly in physics, focused on helping students build a genuine, lasting understanding of core scientific principles. I built each student's study plan around their own pace, school coursework and schedule and leaned heavily on simple hands-on experiments, multimedia content and simulation tools to make abstract concepts click. I kept a close eye on progress, adjusting my approach whenever a student needed a different angle to get there and build confidence</p>
+        </div>
+      </div>
+     </div>
+     <div class="edu-entry">
+       <p class="edu-degree role-degree">
+         <span>Also Worked</span>
+       </p>
+       <p class="block-body block-body-sub">Spent over a year as a Sales Advisor at Plaisio Computers, one of the biggest tech retailers in Greece, splitting time between the Upgrade and Sound &amp; Vision departments. The role came down to understanding what people actually needed and offering the right advice and solutions, while gaining real sales experience in a multilevel, fast-paced company and building a solid understanding of retail metrics like customer conversion rates and KPIs along the way</p>
+     </div>
+    </div>
+  </section>
+
+  <!-- DEVELOPMENT -->
+  <section class="block" id="development">
+    <h2 class="block-title">Development</h2>
+    <p class="block-sub">Some certificates I've been collecting. Turns out that's a hobby now</p>
+
+    <div class="dev-cards">
+      <div class="dev-card-frame">
+        <div class="dev-card">
+          <span class="dev-card-title">Science Education</span>
+          <div class="dev-org">
+            <span class="dev-org-name">Vodafone Foundation &amp; SciCo</span>
+            <p class="block-body block-body-sub">During the Generation Next program, I got certified in STEM Education and tools, gaining experience in visual coding, digital storytelling, app development, hardware prototyping and design-thinking approaches to teaching</p>
+          </div>
+          <div class="dev-org">
+            <span class="dev-org-name">Eugenides Foundation &amp; IMBE</span>
+            <p class="block-body block-body-sub">Attended the Neurobiology of Learning seminar, which spanned diverse topics like the neurobiological basis of emotions and their effect on memory and learning, the science of dreams, memory and learning strategies, the neuropsychology of learning difficulties and the role of empathy in the educator-student-parent relationship</p>
+          </div>
+          <div class="dev-org">
+            <span class="dev-org-name">Other Workshops &amp; Certificates</span>
+            <p class="block-body block-body-sub">The entries above are the major highlights. Throughout my career, I've also attended numerous seminars, workshops and lectures in science teaching, interactive education and engaging with children and educators</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="dev-card-frame">
+        <div class="dev-card">
+          <span class="dev-card-title">Emerging Technologies</span>
+          <div class="dev-org">
+            <span class="dev-org-name">IBM Quantum Learning Platform</span>
+            <p class="block-body block-body-sub">During my preparation for my postgraduate studies, I spent over 100 hours on IBM's Quantum Learning Platform, starting from the fundamentals of quantum information and moving through quantum algorithms, error correction and high-performance computing integration, before specializing in variational methods, quantum machine learning and quantum-safe cryptography, building a solid foundation to work on</p>
+          </div>
+          <div class="dev-org">
+            <span class="dev-org-name">Anthropic Academy, AI &amp; Claude</span>
+            <p class="block-body block-body-sub">Completed a series of Anthropic Academy courses on Claude and agentic AI development, covering hands-on use of Claude Code and Claude Cowork, AI fluency frameworks for general and educational contexts, the Model Context Protocol and building with Agent Skills, further deepening practical fluency with modern AI tooling</p>
+          </div>
+          <div class="dev-org">
+            <span class="dev-org-name">Grow with Google Academy, AI</span>
+            <p class="block-body block-body-sub">Completed the Google AI Professional Certificate, covering practical use of Gemini and NotebookLM across brainstorming, research, writing, content creation, data analysis and no-code app building for everyday work</p>
+          </div>
+          <div class="dev-org">
+            <span class="dev-org-name">National Documentation Center</span>
+            <p class="block-body block-body-sub">Attended a webinar by Greece's National Documentation Center on applying AI for research, exploring its impact across scientific fields and its growing role in everyday research practice, from data analysis to discovery</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="dev-card-frame">
+        <div class="dev-card">
+          <span class="dev-card-title">Product &amp; Analytics</span>
+          <div class="dev-org">
+            <span class="dev-org-name">Pendo Academy, Mind the Product</span>
+            <p class="block-body block-body-sub">Completed a series of certifications covering the product management life cycle from discovery through launch, strategy and tools behind building data-driven product teams from user data and how to apply AI effectively within product management workflows — rounding out a solid, product-led foundation grounded in data and AI</p>
+          </div>
+          <div class="dev-org">
+            <span class="dev-org-name">Grow with Google Academy, DA</span>
+            <p class="block-body block-body-sub">Completed the Google Data Analytics Professional Certificate, covering the core practices and processes of data analysis: cleaning, organizing and analyzing data with spreadsheets, SQL, R and Python and how to visualize and present findings through interactive dashboards and reporting tools like Tableau, using real-world case studies</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SKILLS -->
+  <section class="block" id="skills">
+    <h2 class="block-title">Skills</h2>
+    <p class="block-sub">The working toolkit — nothing decorative</p>
+
+    <div class="skill-cards">
+      <div class="skill-card-frame">
+        <div class="skill-card">
+          <span class="skill-card-title">Core Soft Skills</span>
+          <div class="skill-org">
+            <p class="block-body block-body-sub">Throughout my studies and career I developed a skillset built around communication, adaptability and problem-solving, shaped by teaching, coordinating programs, leading teams and working across different environments and organizations. Strategic planning, time management and critical thinking come naturally after years of juggling multiple responsibilities at once, and public speaking stopped being intimidating a long time ago</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="skill-card-frame">
+        <div class="skill-card">
+          <span class="skill-card-title">Technical Skills</span>
+          <div class="skill-org">
+            <span class="skill-org-name">Programming</span>
+            <p class="block-body block-body-sub">Comfortable working across Python, Julia, R, SQL and Octave, covering everything from data analysis and automation scripts to statistical modeling, database querying and quantum circuit simulation with Qiskit, picked up through coursework and personal projects and kept sharp by just building things until they actually work</p>
+          </div>
+          <div class="skill-org">
+            <span class="skill-org-name">Software &amp; Tools</span>
+            <p class="block-body block-body-sub">At home in both Windows and Linux environments, with working knowledge of the Microsoft Office Suite, Microsoft Teams, Google Workspace, Power BI, Tableau and SAP ERP, covering everything from documents and dashboards to reporting and team collaboration, picked up over time across different roles and projects</p>
+          </div>
+          <div class="skill-org">
+            <span class="skill-org-name">AI &amp; Automation</span>
+            <p class="block-body block-body-sub">Regularly working with AI tools like ChatGPT, Gemini, NotebookLM, Claude and DeepSeek, across research, coding and everyday productivity, backed by solid knowledge in agentic workflows, prompting and AI fluency</p>
+          </div>
+        </div>
+      </div>
+      <div class="skill-card-frame">
+        <div class="skill-card">
+          <span class="skill-card-title">Languages</span>
+          <div class="skill-org">
+            <p class="block-body block-body-sub">Native Greek speaker, fluent in English and just enough Swedish to survive small talk during a 15-minute fika</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROJECTS -->
+  <section class="block" id="projects">
+    <h2 class="block-title">Projects</h2>
+    <p class="block-sub">The stuff I work on when I should probably be sleeping</p>
+    <div class="project-card-frame">
+    <div class="project-card">
+      <span class="project-body">
+        <span class="project-title-row">
+          <span class="project-title">prismatica</span>
+          <span class="project-logo" aria-hidden="true">
+            <svg viewBox="0 0 512 512">
+              <defs>
+                <linearGradient id="prismSpectrumProjects" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%"   style="stop-color:var(--p-red)"/>
+                  <stop offset="20%"  style="stop-color:var(--p-orange)"/>
+                  <stop offset="40%"  style="stop-color:var(--p-yellow)"/>
+                  <stop offset="60%"  style="stop-color:var(--p-green)"/>
+                  <stop offset="80%"  style="stop-color:var(--p-blue)"/>
+                  <stop offset="100%" style="stop-color:var(--p-purple)"/>
+                </linearGradient>
+              </defs>
+              <path class="prism-dark" d="M487.83,319.44,295.63,36.88a48,48,0,0,0-79.26,0L24.17,319.44A47.1,47.1,0,0,0,41.1,387.57L233.3,490.32a48.05,48.05,0,0,0,45.4,0L470.9,387.57a47.1,47.1,0,0,0,16.93-68.13Zm-431.26,41a16.12,16.12,0,0,1-8-10.38,16.8,16.8,0,0,1,2.37-13.62L232.66,69.26c2.18-3.21,7.34-1.72,7.34,2.13v374c0,5.9-6.54,9.63-11.87,6.78Z" fill="var(--ink)"/>
+              <path class="prism-color" d="M487.83,319.44,295.63,36.88a48,48,0,0,0-79.26,0L24.17,319.44A47.1,47.1,0,0,0,41.1,387.57L233.3,490.32a48.05,48.05,0,0,0,45.4,0L470.9,387.57a47.1,47.1,0,0,0,16.93-68.13Zm-431.26,41a16.12,16.12,0,0,1-8-10.38,16.8,16.8,0,0,1,2.37-13.62L232.66,69.26c2.18-3.21,7.34-1.72,7.34,2.13v374c0,5.9-6.54,9.63-11.87,6.78Z" fill="url(#prismSpectrumProjects)"/>
+              <path class="prism-outline" d="M487.83,319.44,295.63,36.88a48,48,0,0,0-79.26,0L24.17,319.44A47.1,47.1,0,0,0,41.1,387.57L233.3,490.32a48.05,48.05,0,0,0,45.4,0L470.9,387.57a47.1,47.1,0,0,0,16.93-68.13Zm-431.26,41a16.12,16.12,0,0,1-8-10.38,16.8,16.8,0,0,1,2.37-13.62L232.66,69.26c2.18-3.21,7.34-1.72,7.34,2.13v374c0,5.9-6.54,9.63-11.87,6.78Z" fill="none" stroke="var(--ink)" stroke-width="15" stroke-linejoin="round" stroke-linecap="round"/>
+            </svg>
+          </span>
+        </span>
+        <p class="project-desc">Landing in 2027, hopefully. Based on knowledge, experience and content I'd developed over the years, prismatica is my attempt at a fun, alternative way to explore science. It's a completely free, interactive learning platform for students and educators, built around experiments, simulations and games spanning physics, math, chemistry, biology and coding</p>
+        <p class="project-desc">This is a massive personal project, still very much in development. Once it's live, prismatica aims to be one of the largest platforms out there with this level of concentrated educational content. For now, I've set up a GitHub page to upload some demos and try things out — the finished version will look a lot cleaner, with original artwork and actual stuff to click around in. If any of this sounds interesting, or you'd like to help out, feel free to reach out — I'm always happy to chat about it</p>
+      </span>
+    </div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section class="block" id="contact">
+    <h2 class="block-title">Contact</h2>
+    <div class="contact-grid">
+      <a class="contact-card" href="mailto:grigorispol99@gmail.com">
+        <span class="contact-icon contact-icon-mail">
+          <svg viewBox="0 0 24 24"><path d="M2.94 6.41A2 2 0 0 1 4 6h16a2 2 0 0 1 1.06.32L12 12.24 2.94 6.41Z"/><path d="M22 8.12V17a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.12l9.06 5.85a2 2 0 0 0 1.88 0L22 8.12Z"/></svg>
+        </span>
+        <span class="contact-text">
+          <span class="contact-label">Email</span>
+          <span class="contact-value">Get in touch</span>
+        </span>
+      </a>
+      <a class="contact-card" href="https://www.linkedin.com/in/gpolychronakis" target="_blank" rel="noopener">
+        <span class="contact-icon contact-icon-linkedin">
+          <svg viewBox="0 0 24 24"><path d="M8.4 9.6h3.4v1.74h.05c.47-.87 1.63-1.79 3.36-1.79 3.6 0 4.26 2.28 4.26 5.25v6.05h-3.55v-5.37c0-1.28-.02-2.93-1.86-2.93-1.87 0-2.16 1.4-2.16 2.84v5.46H8.4V9.6Z"/><path d="M7.05 6.35a2.06 2.06 0 1 1-4.12 0 2.06 2.06 0 0 1 4.12 0Z"/><path d="M3.28 9.6h3.55v11.25H3.28V9.6Z"/></svg>
+        </span>
+        <span class="contact-text">
+          <span class="contact-label">LinkedIn</span>
+          <span class="contact-value">Let's connect</span>
+        </span>
+      </a>
+      <a class="contact-card" href="https://github.com/grigorispol" target="_blank" rel="noopener">
+        <span class="contact-icon contact-icon-github">
+          <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.58 2 12.2c0 4.5 2.87 8.32 6.84 9.67.5.1.68-.22.68-.49v-1.91c-2.78.62-3.37-1.36-3.37-1.36-.45-1.19-1.11-1.5-1.11-1.5-.91-.64.07-.63.07-.63 1 .07 1.53 1.05 1.53 1.05.9 1.57 2.36 1.12 2.94.86.09-.66.35-1.12.64-1.38-2.22-.26-4.56-1.14-4.56-5.06 0-1.12.39-2.04 1.03-2.75-.1-.26-.45-1.31.1-2.73 0 0 .84-.28 2.75 1.05a9.3 9.3 0 0 1 5 0c1.91-1.33 2.75-1.05 2.75-1.05.55 1.42.2 2.47.1 2.73.64.71 1.03 1.63 1.03 2.75 0 3.93-2.34 4.8-4.57 5.05.36.32.68.96.68 1.94v2.87c0 .27.18.6.69.49C19.14 20.51 22 16.7 22 12.2 22 6.58 17.52 2 12 2Z"/></svg>
+        </span>
+        <span class="contact-text">
+          <span class="contact-label">GitHub</span>
+          <span class="contact-value">See my code</span>
+        </span>
+      </a>
+      <a class="contact-card" href="https://grigorispol.github.io/prismatica/" target="_blank" rel="noopener">
+        <span class="contact-icon contact-icon-prism">
+          <svg viewBox="0 0 512 512">
+            <path d="M487.83,319.44,295.63,36.88a48,48,0,0,0-79.26,0L24.17,319.44A47.1,47.1,0,0,0,41.1,387.57L233.3,490.32a48.05,48.05,0,0,0,45.4,0L470.9,387.57a47.1,47.1,0,0,0,16.93-68.13Zm-431.26,41a16.12,16.12,0,0,1-8-10.38,16.8,16.8,0,0,1,2.37-13.62L232.66,69.26c2.18-3.21,7.34-1.72,7.34,2.13v374c0,5.9-6.54,9.63-11.87,6.78Z" fill="var(--canvas)"/>
+          </svg>
+        </span>
+        <span class="contact-text">
+          <span class="contact-label">prismatica</span>
+          <span class="contact-value">Explore it</span>
+        </span>
+      </a>
+    </div>
+  </section>
+
+  <footer>© 2026 GRIGORIS POLYCHRONAKIS</footer>
+
+<script>
+  const navToggle = document.getElementById('navToggle');
+  const navLinks  = document.getElementById('navLinks');
+  navToggle.addEventListener('click', () => navLinks.classList.toggle('open'));
+
+  // ============ DARK MODE TOGGLE ============
+  (function(){
+    var root = document.documentElement;
+    var toggle = document.getElementById('themeToggle');
+    if (!toggle) return;
+
+    function isDark(){
+      return root.getAttribute('data-theme') === 'dark';
+    }
+
+    function updateButton(){
+      toggle.setAttribute('aria-pressed', isDark() ? 'true' : 'false');
+      toggle.setAttribute('title', isDark() ? 'Switch to light mode' : 'Switch to dark mode');
+    }
+
+    function updateMapImage(){
+      var mapImg = document.getElementById('greeceMapImg');
+      if (!mapImg) return;
+      var wanted = isDark() ? mapImg.getAttribute('data-src-dark') : mapImg.getAttribute('data-src-light');
+      if (mapImg.getAttribute('src') !== wanted) mapImg.src = wanted;
+    }
+
+    updateButton();
+
+    toggle.addEventListener('click', function(){
+      var next = isDark() ? 'light' : 'dark';
+      if (next === 'dark'){
+        root.setAttribute('data-theme', 'dark');
+      } else {
+        root.removeAttribute('data-theme');
+      }
+      try{ localStorage.setItem('theme', next); }catch(e){}
+      updateButton();
+      updateMapImage();
+    });
+
+  })();
+
+  // scroll progress bar: width tracks how far down the page the user has
+  // scrolled, from 0% at the top to 100% at the bottom. Updates are
+  // throttled to one per animation frame and driven by a CSS transform
+  // (rather than the width property) so the motion stays smooth instead
+  // of jumping in discrete steps on every scroll event.
+  (function(){
+    const bar = document.getElementById('scrollProgress');
+    if (!bar) return;
+
+    let ticking = false;
+
+    function updateProgress(){
+      const scrollTop = window.scrollY || document.documentElement.scrollTop;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const pct = docHeight > 0 ? scrollTop / docHeight : 0;
+      bar.style.transform = 'scaleX(' + Math.min(1, Math.max(0, pct)) + ')';
+      ticking = false;
+    }
+
+    function requestTick(){
+      if (!ticking){
+        ticking = true;
+        requestAnimationFrame(updateProgress);
+      }
+    }
+
+    updateProgress();
+    window.addEventListener('scroll', requestTick, { passive:true });
+    window.addEventListener('resize', requestTick);
+  })();
+
+  // fade/slide each section in as it enters the viewport, and back out as
+  // it leaves — toggled both ways (no unobserve) so it repeats each time
+  // a section crosses in or out, rather than only playing once.
+  (function(){
+    const sections = document.querySelectorAll('section.block');
+    if (!sections.length) return;
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion){
+      sections.forEach(s => s.classList.add('in-view'));
+      return;
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        const el = entry.target;
+        clearTimeout(el._fadeTimer);
+
+        if (entry.isIntersecting){
+          // entering: apply immediately, no delay
+          el.classList.add('in-view');
+        } else {
+          // leaving: wait briefly before removing, so a scroll that stalls
+          // right at the edge of the threshold doesn't cause the class to
+          // rapidly toggle on/off (which reads as a glitch/flicker). If the
+          // section re-enters before the delay elapses, this timer gets
+          // cleared above and nothing happens.
+          el._fadeTimer = setTimeout(() => {
+            el.classList.remove('in-view');
+          }, 180);
+        }
+      });
+    }, { threshold:0.12, rootMargin:'-4% 0px -4% 0px' });
+
+    sections.forEach(s => observer.observe(s));
+  })();
+
+  function scrollToSection(id){
+    document.getElementById(id).scrollIntoView({ behavior:'smooth' });
+    navLinks.classList.remove('open');
+  }
+
+  // relay effect: each spot lights, then at its midpoint the next spot lights too,
+  // overlapping briefly before the first one fades — a slow chain across the map
+  (function(){
+    const glowEls = Array.from(document.querySelectorAll('#mapSpotlight .glow'));
+    if (!glowEls.length) return;
+
+    const points = glowEls.map(el => ({
+      el,
+      x: parseFloat(el.style.left),
+      y: parseFloat(el.style.top)
+    }));
+
+    const MIN_DIST = 18;        // minimum % distance apart between any two spots lit at once
+    const HANDOFF_DELAY = 2100; // time between each new spot lighting up
+
+    function dist(a, b){
+      return Math.hypot(a.x - b.x, a.y - b.y);
+    }
+
+    // avoid picking a spot too close to either currently-lit spot, so overlapping
+    // points never look like duplicates of the same place
+    function pickNext(current, previous){
+      const avoid = previous ? [current, previous] : [current];
+      let candidates = points.filter(p => !avoid.includes(p) && avoid.every(a => dist(p, a) >= MIN_DIST));
+      if (!candidates.length){
+        candidates = points.filter(p => !avoid.includes(p));
+      }
+      return candidates[Math.floor(Math.random() * candidates.length)];
+    }
+
+    // point lights now; previous is the spot lit one step before it (still lit);
+    // prevPrev is the spot lit two steps before it — it turns off right as this
+    // one lights, so at most 3 spots are ever lit at once: prevPrev (about to fade),
+    // previous, and point
+    function lightUp(point, previous, prevPrev){
+      point.el.classList.add('lit');
+
+      if (prevPrev){
+        prevPrev.el.classList.remove('lit');
+      }
+
+      setTimeout(() => {
+        const next = pickNext(point, previous);
+        lightUp(next, point, previous);
+      }, HANDOFF_DELAY);
+    }
+
+    const start = points[Math.floor(Math.random() * points.length)];
+    lightUp(start, null, null);
+  })();
+
+  // map sizing: stretch the experience map so it starts level with the
+  // opening line of the Program Coordinator paragraph ("Thousands of
+  // students...") and ends level with the line containing "the hard
+  // stuff" further down that same paragraph. Both edges are measured
+  // live off the actual text, so it stays correct across reflows.
+  (function(){
+    const mapEl   = document.querySelector('.experience-map');
+    const row     = document.querySelector('.experience-row');
+    const startEl = document.querySelector('.experience-content .edu-entry .block-body-sub');
+    const endEl   = document.getElementById('hardStuffLine');
+    const imgEl   = document.querySelector('.experience-map img');
+    const spotEl  = document.getElementById('mapSpotlight');
+    if (!mapEl || !row || !startEl || !endEl) return;
+
+    // small extra buffer past the "hard stuff" line, so the map gets a
+    // touch more vertical room to grow into (safe since object-fit:contain
+    // means extra height never distorts the image, just gives it more
+    // space to scale up within).
+    const EXTRA_HEIGHT = 28;
+
+    // pulls the top edge up slightly so the map stretches a bit further
+    // upward, past its originally aligned starting line.
+    const EXTRA_TOP = 36;
+
+    // The glow points were originally calibrated as % positions against
+    // the raw image (which used to fill 100% of its box exactly). Now
+    // that the image uses object-fit:contain inside a taller box, it no
+    // longer fills that box exactly — it's letterboxed, top-aligned,
+    // centered horizontally. So the dot overlay must be resized/repositioned
+    // to match the image's actual rendered rectangle, not the full frame.
+    function positionSpotlight(){
+      if (!imgEl || !spotEl) return;
+      const naturalW = imgEl.naturalWidth;
+      const naturalH = imgEl.naturalHeight;
+      if (!naturalW || !naturalH) return;
+
+      const frameW = imgEl.clientWidth;
+      const frameH = imgEl.clientHeight;
+      if (!frameW || !frameH) return;
+
+      const scale = Math.min(frameW / naturalW, frameH / naturalH);
+      const renderedW = naturalW * scale;
+      const renderedH = naturalH * scale;
+      const offsetX = (frameW - renderedW) / 2; // object-position: center (horizontal)
+      const offsetY = 0;                        // object-position: top (vertical)
+
+      spotEl.style.left = offsetX + 'px';
+      spotEl.style.top = offsetY + 'px';
+      spotEl.style.width = renderedW + 'px';
+      spotEl.style.height = renderedH + 'px';
+    }
+
+    function sizeMap(){
+      // below the 720px breakpoint the map stacks above the text instead
+      // of sitting beside it, so the text-relative measurement doesn't
+      // apply — fall back to the natural CSS sizing there.
+      if (window.innerWidth <= 720){
+        mapEl.style.marginTop = '';
+        mapEl.style.height = '';
+        if (spotEl){
+          spotEl.style.left = '';
+          spotEl.style.top = '';
+          spotEl.style.width = '';
+          spotEl.style.height = '';
+        }
+        return;
+      }
+
+      const rowRect   = row.getBoundingClientRect();
+      const startRect = startEl.getBoundingClientRect();
+      const endRect   = endEl.getBoundingClientRect();
+
+      const top    = startRect.top - rowRect.top - EXTRA_TOP;
+      const bottom = endRect.bottom - rowRect.top + EXTRA_HEIGHT;
+      const height = bottom - top;
+
+      if (height <= 0) return;
+
+      mapEl.style.marginTop = top + 'px';
+      mapEl.style.height = height + 'px';
+
+      positionSpotlight();
+    }
+
+    sizeMap();
+    window.addEventListener('resize', sizeMap);
+    window.addEventListener('load', sizeMap);
+    if (imgEl && !imgEl.complete){
+      imgEl.addEventListener('load', sizeMap);
+    }
+    if (document.fonts && document.fonts.ready){
+      document.fonts.ready.then(sizeMap);
+      document.fonts.ready.then(() => setTimeout(sizeMap, 250));
+    }
+  })();
+
+  // year markers: each one aligns its baseline with the baseline of the
+  // LAST VISIBLE LINE of its own edu-entry paragraph. The first (Program
+  // Coordinator) flips its last digit between 2 (2022) and 6 (2026); the
+  // second entry (Team Leader) is static at 2024; the third (Physics
+  // Tutor) flips its last digit between 0 (2020) and 4 (2024) — both
+  // flipping markers change every 5 seconds.
+  //
+  // This uses a font-metrics-agnostic technique: a zero-size inline-block
+  // probe with vertical-align:baseline sits exactly on a line's baseline
+  // when measured with getBoundingClientRect(). We measure the baseline of
+  // the last text line, the baseline offset inside the marker itself (using
+  // its own probe), then set marker.style.top so the two baselines match —
+  // no matter which font actually ends up loaded/rendered.
+  (function(){
+    const map     = document.querySelector('.experience-map');
+    const entries = document.querySelectorAll('.experience-content .edu-entry');
+    const flips   = [
+      { el: document.getElementById('yearFlip'),            values: ['2', '6'] },
+      { el: document.getElementById('yearFlipPhysicsTutor'), values: ['0', '4'] }
+    ].filter(f => f.el);
+    if (!map || !entries.length) return;
+
+    const pairs = [
+      { marker: document.getElementById('yearMarker'),             entry: entries[0] },
+      { marker: document.getElementById('yearMarkerTeamLeader'),    entry: entries[1] },
+      { marker: document.getElementById('yearMarkerPhysicsTutor'),  entry: entries[2] }
+    ].filter(p => p.marker && p.entry)
+     .map(p => ({ marker: p.marker, text: p.entry.querySelector('.block-body-sub') }))
+     .filter(p => p.text);
+
+    if (!pairs.length) return;
+
+    function makeProbe(){
+      const probe = document.createElement('span');
+      probe.style.display = 'inline-block';
+      probe.style.width = '0';
+      probe.style.height = '0';
+      probe.style.verticalAlign = 'baseline';
+      probe.setAttribute('aria-hidden', 'true');
+      return probe;
+    }
+
+    function lastLineBaselineY(el){
+      const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+      let lastTextNode = null;
+      while (walker.nextNode()) lastTextNode = walker.currentNode;
+      if (!lastTextNode) return null;
+
+      const probe = makeProbe();
+      lastTextNode.parentNode.insertBefore(probe, lastTextNode.nextSibling);
+      const y = probe.getBoundingClientRect().top;
+      probe.remove();
+      return y;
+    }
+
+    function markerBaselineOffset(marker){
+      // Distance from the marker element's own top edge down to its text
+      // baseline — a property of its font/line-height, independent of
+      // wherever marker.style.top currently places it.
+      const probe = makeProbe();
+      marker.appendChild(probe);
+      const markerRect = marker.getBoundingClientRect();
+      const probeRect = probe.getBoundingClientRect();
+      probe.remove();
+      return probeRect.top - markerRect.top;
+    }
+
+    function align(){
+      const mapRect = map.getBoundingClientRect();
+      pairs.forEach(({ marker, text }) => {
+        const textBaselineY = lastLineBaselineY(text);
+        if (textBaselineY === null) return;
+        const offset = markerBaselineOffset(marker);
+        marker.style.top = (textBaselineY - offset - mapRect.top) + 'px';
+      });
+    }
+
+    align();
+    window.addEventListener('resize', align);
+    window.addEventListener('load', align);
+    if (document.fonts && document.fonts.ready){
+      document.fonts.ready.then(align);
+      // fonts.ready can resolve before every requested weight is actually
+      // painted in some browsers — re-check shortly after as a safety net.
+      document.fonts.ready.then(() => setTimeout(align, 250));
+    }
+
+    if (flips.length){
+      setInterval(() => {
+        flips.forEach(({ el, values }) => {
+          el.classList.add('flipping');
+          setTimeout(() => {
+            el.textContent = el.textContent === values[0] ? values[1] : values[0];
+            el.classList.remove('flipping');
+          }, 250);
+        });
+      }, 5000);
+    }
+  })();
+</script>
+
+</body>
+</html>
